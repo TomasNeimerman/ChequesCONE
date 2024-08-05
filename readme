@@ -1,0 +1,15 @@
+base de datos:
+tablas:
+Usuario: (documento/nomber usuario, password)
+Base de datos a utilizar (multiempresa)
+Cheques (id,numerocheque)
+parametros de base de datos:
+Conexion:
+conectar host
+devolver usuario
+devolver conexion de internet
+funciones aplicacion:
+importar datos con un excel insertado
+actualizar base de datos
+aplicacion:
+
