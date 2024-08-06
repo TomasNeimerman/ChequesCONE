@@ -13,3 +13,6 @@ importar datos con un excel insertado
 actualizar base de datos
 aplicacion:
 
+comandos para ejecutarlo en ort:
+npm config set strict-ssl false
+npm install
