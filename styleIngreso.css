@@ -1,0 +1,67 @@
+.fondo {
+    background: #669DBF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50px 0;
+    box-sizing: border-box;
+    height: 100vh; /* Ajusta la altura al 100% de la ventana */
+}
+
+.fondo .rectangle-1 {
+    background: #55CCD0;
+    position: relative;
+    width: 460px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.fondo .ingrese-su-cheque {
+    text-align: center;
+    font-family: 'Alata', sans-serif;
+    font-weight: 400;
+    font-size: 28px;
+    color: #000000;
+    margin-bottom: 20px;
+}
+
+.fondo .rectangle-2,
+.fondo .rectangle-3,
+.fondo .rectangle-4 {
+    border-radius: 5px;
+    border: 1px solid #000000;
+    background: #31D2F2;
+    width: 100%; /* Ocupa todo el ancho disponible */
+    height: 41px;
+    margin-bottom: 20px;
+}
+
+.fondo .rectangle-4 {
+    margin-top: 20px;
+}
+
+.fondo .rectangle-2 input[type="file"] {
+    width: 100%; /* Ajusta el input de archivo al 100% */
+    height: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    border: none;
+    background: none;
+    font-size: 16px;
+}
+
+.fondo button {
+    width: 100%;
+    height: 50px;
+    background-color: #31D2F2;
+    border: 1px solid #000000;
+    border-radius: 5px;
+    font-size: 18px;
+    font-family: 'Alata', sans-serif;
+    cursor: pointer;
+}
+
+.fondo button:hover {
+    background-color: #2ab8cc;
+}

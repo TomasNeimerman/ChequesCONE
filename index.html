@@ -13,12 +13,10 @@
     <span class="texto-p">
       Lorem ipsum dolor sit amet consectetur adipiscing elit duis torquent ornare placerat, consequat in sem potenti dui sodales arcu eu orci conubia
     </span>
-    <button type="button" id="newWindowBtn" class="rectangle-1">Opciones</button>
+    <!-- index.html -->
+<button type="button" id="newWindowBtn" class="rectangle-1">Ingresar cheques</button>
+
   </div>
-  <script>
-    document.getElementById('newWindowBtn').addEventListener('click', () => {
-      window.electron.ipcRenderer.send('open-new-window');
-    });
-  </script>
+  <script src="index.js"></script>
 </body>
 </html>

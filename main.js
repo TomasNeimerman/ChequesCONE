@@ -1,51 +1,44 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('node:path');
+// main.js (archivo principal de tu aplicación Electron)
 
-let mainWindow;
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 720,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      enableRemoteModule: false,
-      nodeIntegration: false,
-    }
-  });
+function createMainWindow() {
+    const mainWindow = new BrowserWindow({
+        width: 1280,
+        height: 720,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+        }
+    });
 
-  mainWindow.loadFile('index.html');
+    mainWindow.loadFile('index.html'); // Carga tu archivo HTML principal
+}
+
+function createIngresarWindow() {
+    const ingresarWindow = new BrowserWindow({
+        width: 520,
+        height: 480,
+        title: "Ingresar Cheques"
+    });
+
+    ingresarWindow.loadFile('Ingresar.html'); // Carga el archivo HTML de la nueva ventana
 }
 
 app.whenReady().then(() => {
-  createWindow();
+    createMainWindow();
 
-  ipcMain.on('open-new-window', () => {
-    const newWindow = new BrowserWindow({
-      width: 600,
-      height: 400,
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
-        contextIsolation: true,
-        enableRemoteModule: false,
-        nodeIntegration: false,
-      }
+    // Event listener for the button
+    const { ipcMain } = require('electron');
+    ipcMain.on('open-ingresar-window', (event) => {
+        createIngresarWindow();
     });
 
-    newWindow.loadFile('Ingresar.html');
-    newWindow.webContents.openDevTools();
-  });
+    app.on('activate', function () {
+        if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
+    });
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+app.on('window-all-closed', function () {
+    if (process.platform !== 'darwin') app.quit();
 });
