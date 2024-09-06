@@ -1,95 +1,82 @@
-const mysql = require('mysql');
-const express = require('express');
-const fileUpload = require('express-fileupload'); // Para manejar subida de archivos
-const xlsx = require('xlsx'); // Para leer archivos Excel
-const app = express();
-
-// Habilitar fileUpload para que podamos recibir archivos en las peticiones
-app.use(fileUpload());
-
-// Configurar conexión con la base de datos
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'password',
-    database: 'nombre_basedatos'
+// Cargar empresas en el select al cargar la página
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Llamamos al método getEmpresas expuesto en preload.js
+        const empresas = await window.api.getEmpresas();
+        const empresasSelect = document.getElementById('empresas');
+        
+        // Llenar el select con las empresas obtenidas
+        empresas.forEach(empresa => {
+            const option = document.createElement('option');
+            option.value = empresa.id;
+            option.textContent = empresa.nombre;
+            empresasSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error al cargar empresas:', error);
+        alert('Error al cargar las empresas desde la base de datos');
+    }
 });
 
-connection.connect((err) => {
-    if (err) {
-        console.error('Error conectando a la base de datos:', err);
-        return;
-    }
-    console.log('Conectado a la base de datos');
-});
+// Leer y validar el archivo Excel al seleccionar un archivo
+document.getElementById('fileInput').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
 
-// Ruta para obtener la lista de empresas
-app.get('/getEmpresas', (req, res) => {
-    const query = 'SELECT id, nombre FROM Empresas';
-    connection.query(query, (error, results) => {
-        if (error) {
-            console.error('Error ejecutando la consulta:', error);
-            return res.status(500).send('Error obteniendo las empresas');
-        }
-        res.json(results);  // Devuelve las empresas en formato JSON
-    });
-});
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
 
-// Ruta para validar y actualizar los datos del Excel
-app.post('/validarYActualizar', (req, res) => {
-    if (!req.files || !req.body.empresaId) {
-        return res.status(400).send({ success: false, message: 'Archivo y empresa son requeridos' });
-    }
+        // Convertir la hoja de Excel a JSON
+        const chequesData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-    const file = req.files.file;
-    const empresaId = req.body.empresaId;
-
-    // Leer el archivo Excel
-    const workbook = xlsx.read(file.data, { type: 'buffer' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
-
-    // Validar que haya al menos 2 filas
-    if (rows.length < 2) {
-        return res.status(400).send({ success: false, message: 'El archivo debe tener al menos 2 filas' });
-    }
-
-    const fila1 = rows[0]; // Primera fila
-    const fila2 = rows[1]; // Segunda fila
-
-    // Validar que ambas filas sean números enteros
-    if (!fila1.every(Number.isInteger) || !fila2.every(Number.isInteger)) {
-        return res.status(400).send({ success: false, message: 'Ambas filas deben contener enteros' });
-    }
-
-    // Verificar que la primera fila coincida con los datos en la base de datos
-    const querySelect = 'SELECT columna1, columna2 FROM Cheques WHERE empresaId = ?';
-    connection.query(querySelect, [empresaId], (error, results) => {
-        if (error) {
-            console.error('Error ejecutando el SELECT:', error);
-            return res.status(500).send({ success: false, message: 'Error verificando los datos en la base de datos' });
+        // Validar el contenido del archivo
+        if (!validarArchivoExcel(chequesData)) {
+            alert('El archivo no es válido');
+            return;
         }
 
-        const datosBD = results[0];
-
-        if (datosBD.columna1 !== fila1[0] || datosBD.columna2 !== fila1[1]) {
-            return res.status(400).send({ success: false, message: 'Los datos no coinciden con los almacenados en la base de datos' });
-        }
-
-        // Si los datos son válidos, proceder con el UPDATE
-        const queryUpdate = 'UPDATE Cheques SET columna1 = ?, columna2 = ? WHERE empresaId = ?';
-        connection.query(queryUpdate, [fila2[0], fila2[1], empresaId], (error, results) => {
-            if (error) {
-                console.error('Error ejecutando el UPDATE:', error);
-                return res.status(500).send({ success: false, message: 'Error actualizando los datos' });
+        // Enviar los datos al main process cuando se presiona "Guardar"
+        document.getElementById('chequeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const idEmpresa = document.getElementById('empresas').value;
+            if (!idEmpresa) {
+                alert('Debe seleccionar una empresa');
+                return;
             }
 
-            res.send({ success: true, message: 'Datos actualizados correctamente' });
+            try {
+                // Llamamos al método updateCheques expuesto en preload.js
+                const result = await window.api.updateCheques(chequesData, idEmpresa);
+                if (result.success) {
+                    alert('Cheques actualizados exitosamente');
+                } else {
+                    alert('Error al actualizar cheques');
+                }
+            } catch (error) {
+                console.error('Error al actualizar cheques:', error);
+                alert('Ocurrió un error al intentar actualizar los cheques.');
+            }
         });
-    });
+    };
+
+    reader.readAsArrayBuffer(file);
 });
 
-// Iniciar el servidor en el puerto 3000
-app.listen(3000, () => {
-    console.log('Servidor escuchando en el puerto 3000');
-});
+// Función para validar el archivo Excel
+function validarArchivoExcel(data) {
+    // Verificar que cada columna tenga 2 filas y que los tipos de datos sean válidos
+    for (let i = 0; i < data.length; i++) {
+        if (data[i].length !== 2) {
+            return false;
+        }
+        const nroCheque = data[i][0];
+        const idEmpresa = data[i][1];
+        if (typeof nroCheque !== 'number' || typeof idEmpresa !== 'number') {
+            return false;
+        }
+    }
+    return true;
+}
