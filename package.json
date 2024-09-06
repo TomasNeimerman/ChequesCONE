@@ -10,5 +10,10 @@
   "description": "",
   "devDependencies": {
     "electron": "^31.3.1"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "mssql": "^11.0.1",
+    "xlsx": "^0.18.5"
   }
 }

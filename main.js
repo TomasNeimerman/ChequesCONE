@@ -15,16 +15,6 @@ function createMainWindow() {
     mainWindow.loadFile('index.html'); // Carga tu archivo HTML principal
 }
 
-function createIngresarWindow() {
-    const ingresarWindow = new BrowserWindow({
-        width: 520,
-        height: 480,
-        title: "Ingresar Cheques"
-    });
-
-    ingresarWindow.loadFile('Ingresar.html'); // Carga el archivo HTML de la nueva ventana
-}
-
 app.whenReady().then(() => {
     createMainWindow();
 
