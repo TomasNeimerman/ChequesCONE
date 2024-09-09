@@ -5,11 +5,12 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #669DBF;
+  background-color: #fff;
 }
 
 .tv-1 {
-  background: #55CCD0;
+  background: linear-gradient(to bottom right, #ffffff, #ffcccc, #ff6666);
+  background-attachment: fixed;
   border: 2px solid #000000;
   border-radius: 20px;
   box-shadow: 0px 3px 3px 0px rgba(0, 0, 0, 0.25);
@@ -23,7 +24,7 @@ body {
 }
 
 .texto-h-1 {
-  font-family: 'Alata';
+  font-family: 'Public Sans';
   font-weight: 700;
   font-size: 32px;
   color: #000000;
@@ -32,7 +33,7 @@ body {
 }
 
 .texto-p {
-  font-family: 'Alata';
+  font-family: 'Public Sans';
   font-weight: 400;
   font-size: 16px;
   color: #000000;
@@ -42,8 +43,8 @@ body {
 }
 
 .rectangle-1, .button {
-  background: #31d2f2;
-  font-family: 'Alata';
+  background: #e82c02;
+  font-family: 'Public Sans';
   font-size: 24px;
   width: 250px;
   height: 75px;
