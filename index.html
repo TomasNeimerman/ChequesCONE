@@ -8,14 +8,23 @@
 </head>
 <body>
   <div class="tv-1">
-    <div class="rectangle-2"></div>
     <span class="texto-h-1">Ingreso de cheques</span>
     <span class="texto-p">
      Bienvenido a la aplicacion de ingreso de cheques, presione el boton de abajo para comenzar
     </span>
-    <!-- index.html -->
-<button type="button"  class="rectangle-1" ><a href="Ingresar.html">Ingresar cheques</a></button>
+    
+          <form id="chequeForm">
+              
+              <select id="empresas" name="empresas" class="rectangle-2 form-select" required>
+                  <option value="" disabled selected>Seleccione una empresa</option>
+              </select>
+          
+              <input type="file" id="fileInput" class="rectangle-3 form-control" accept=".xls,.xlsx" required>
 
-  </div>
+              <button class="rectangle-4 btn btn-primary" type="submit">Guardar</button>
+          </form>
+      </div>
+  
+  <script src="verificacioncheques.js"></script>
 </body>
 </html>

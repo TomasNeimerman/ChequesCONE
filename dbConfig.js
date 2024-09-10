@@ -1,6 +1,6 @@
 module.exports = {
     user: 'userEmpresa',
-    password: 'cheques',
+    password: 'cheque',
     server: 'localhost',
     database: 'Cheques',
     options: {
