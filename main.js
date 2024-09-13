@@ -1,22 +1,61 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
 const path = require('path');
-const sql = require('mssql');
-const dbConfig = require('./dbConfig');
+const fs = require('fs');
+const XLSX = require('xlsx');
+const { connectToDatabase } = require('./dbConfig');
 
 let mainWindow;
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        width: 1280,
-        height: 720,
+        width: 1920,
+        height: 1080,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
         }
     });
-
+    
     mainWindow.loadFile('index.html');
+
+    const template = [
+        {
+            label: 'File',
+            submenu: [
+                {
+                    label: 'Load Cheques',
+                    click: async () => {
+                        const result = await dialog.showOpenDialog(mainWindow, {
+                            properties: ['openFile'],
+                            filters: [
+                                { name: 'Excel Files', extensions: ['xlsx', 'xls'] }
+                            ]
+                        });
+
+                        if (!result.canceled && result.filePaths.length > 0) {
+                            const filePath = result.filePaths[0];
+                            const workbook = XLSX.readFile(filePath);
+                            const sheetName = workbook.SheetNames[0];
+                            const cheques = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+                            mainWindow.webContents.send('cheques-loaded', cheques);
+                        }
+                    }
+                },
+                {
+                    label: 'Save Cheques',
+                    click: async () => {
+                        mainWindow.webContents.send('save-cheques');
+                    }
+                },
+                { type: 'separator' },
+                { role: 'quit' }
+            ]
+        }
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
 }
 
 app.whenReady().then(createMainWindow);
@@ -33,54 +72,24 @@ app.on('activate', () => {
     }
 });
 
-// Función para obtener las empresas desde la base de datos
-ipcMain.handle('get-empresas', async (event) => {
+ipcMain.handle('update-cheques', async (event, cheques, empresa) => {
     try {
-        await sql.connect(dbConfig);
-        const result = await sql.query('SELECT id, nombre FROM Empresa');
-        return result.recordset;
-    } catch (err) {
-        console.error('Error al obtener empresas:', err);
-        throw err;
-    } finally {
-        await sql.close();
-    }
-});
+        const sql = await connectToDatabase(empresa);
 
-// Función modificada para actualizar cheques
-ipcMain.handle('update-cheques', async (event, cheques, idEmpresa) => {
-    try {
-        await sql.connect(dbConfig);
-
-        // Obtener el ID de la empresa basado en el ID proporcionado
-        const empresaResult = await sql.query`
-            SELECT id FROM Empresa WHERE id = ${idEmpresa}
-        `;
-
-        if (empresaResult.recordset.length === 0) {
-            throw new Error('Empresa no encontrada');
-        }
-
-        const empresaId = empresaResult.recordset[0].id;
-
-        // Actualizar los cheques
         for (const cheque of cheques) {
             const [nroCheque, nuevoValor] = cheque;
             
-            // Nota: Reemplaza 'ChequesBanco' con el nombre real de tu tabla
-            // Ajusta los nombres de las columnas según tu esquema de base de datos
             await sql.query`
                 UPDATE Cheque
                 SET nroCheque = ${nuevoValor}
-                WHERE id = ${nroCheque} AND idEmpresa = ${empresaId}
+                WHERE id = ${nroCheque}
             `;
         }
 
+        await sql.close();
         return { success: true };
     } catch (err) {
         console.error('Error al actualizar cheques:', err);
         throw err;
-    } finally {
-        await sql.close();
     }
 });

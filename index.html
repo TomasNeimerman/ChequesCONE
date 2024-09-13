@@ -8,23 +8,20 @@
 </head>
 <body>
   <div class="tv-1">
-    <span class="texto-h-1">Ingreso de cheques</span>
-    <span class="texto-p">
-     Bienvenido a la aplicacion de ingreso de cheques, presione el boton de abajo para comenzar
-    </span>
-    
-          <form id="chequeForm">
-              
-              <select id="empresas" name="empresas" class="rectangle-2 form-select" required>
-                  <option value="" disabled selected>Seleccione una empresa</option>
-              </select>
-          
-              <input type="file" id="fileInput" class="rectangle-3 form-control" accept=".xls,.xlsx" required>
+    <h1 class="texto-h-1">Ingreso de cheques</h1>
+    <p class="texto-p">Bienvenido a la aplicación de ingreso de cheques. Por favor, seleccione una empresa.</p>
 
-              <button class="rectangle-4 btn btn-primary" type="submit">Guardar</button>
-          </form>
-      </div>
-  
-  <script src="verificacioncheques.js"></script>
+    <select id="empresas">
+        <option value="">Seleccione una empresa</option>
+    </select>
+
+    <p id="fileStatus">No se ha cargado ningún archivo de cheques</p>
+
+    <p class="instructions">Use el menú "File" > "Load Cheques" para cargar un archivo de cheques, y "File" > "Save Cheques" para guardar los cambios.</p>
+
+    <img src="logo_cone.png" alt="Logo" class="logo">
+</div>
+
+<script src="renderer.js"></script>
 </body>
 </html>

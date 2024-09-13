@@ -1,55 +1,46 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const empresas = await window.api.getEmpresas();
-        const empresasSelect = document.getElementById('empresas');
-        
-        empresas.forEach(empresa => {
-            const option = document.createElement('option');
-            option.value = empresa.id;
-            option.textContent = empresa.nombre;
-            empresasSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error al cargar empresas:', error);
-        alert('Error al cargar las empresas. Por favor, intente nuevamente.');
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    const empresasSelect = document.getElementById('empresas');
+    const empresas = [
+        { id: 'empresa1', nombre: 'Empresa 1' },
+        { id: 'empresa2', nombre: 'Empresa 2' }
+    ];
+    
+    empresas.forEach(empresa => {
+        const option = document.createElement('option');
+        option.value = empresa.id;
+        option.textContent = empresa.nombre;
+        empresasSelect.appendChild(option);
+    });
 });
 
-document.getElementById('chequeForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const idEmpresa = document.getElementById('empresas').value;
-    const fileInput = document.getElementById('fileInput');
+let chequesData = null;
 
-    if (!idEmpresa) {
+window.api.onChequesLoaded((cheques) => {
+    chequesData = cheques;
+    document.getElementById('fileStatus').textContent = 'Archivo de cheques cargado';
+});
+
+window.api.onSaveCheques(async () => {
+    if (!chequesData) {
+        alert('No se ha cargado ningún archivo de cheques.');
+        return;
+    }
+
+    const empresa = document.getElementById('empresas').value;
+    if (!empresa) {
         alert('Debe seleccionar una empresa');
         return;
     }
 
-    if (!fileInput.files[0]) {
-        alert('Debe seleccionar un archivo');
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const chequesData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        try {
-            const result = await window.api.updateCheques(chequesData, idEmpresa);
-            if (result.success) {
-                alert('Cheques actualizados exitosamente');
-            } else {
-                alert('Error al actualizar cheques');
-            }
-        } catch (error) {
-            console.error('Error al actualizar cheques:', error);
-            alert('Error al actualizar cheques. Por favor, intente nuevamente.');
+    try {
+        const result = await window.api.updateCheques(chequesData, empresa);
+        if (result.success) {
+            alert('Cheques actualizados exitosamente');
+        } else {
+            alert('Error al actualizar cheques');
         }
-    };
-
-    reader.readAsArrayBuffer(fileInput.files[0]);
+    } catch (error) {
+        console.error('Error al actualizar cheques:', error);
+        alert('Error al actualizar cheques. Por favor, intente nuevamente.');
+    }
 });
