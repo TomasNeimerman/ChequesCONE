@@ -5,11 +5,12 @@ const XLSX = require('xlsx');
 const { connectToDatabase } = require('./dbConfig');
 
 let mainWindow;
+let ingresoWindow;
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        width: 1920,
-        height: 1080,
+        width: 800,
+        height: 600,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -24,28 +25,9 @@ function createMainWindow() {
             label: 'File',
             submenu: [
                 {
-                    label: 'Load Cheques',
-                    click: async () => {
-                        const result = await dialog.showOpenDialog(mainWindow, {
-                            properties: ['openFile'],
-                            filters: [
-                                { name: 'Excel Files', extensions: ['xlsx', 'xls'] }
-                            ]
-                        });
-
-                        if (!result.canceled && result.filePaths.length > 0) {
-                            const filePath = result.filePaths[0];
-                            const workbook = XLSX.readFile(filePath);
-                            const sheetName = workbook.SheetNames[0];
-                            const cheques = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
-                            mainWindow.webContents.send('cheques-loaded', cheques);
-                        }
-                    }
-                },
-                {
-                    label: 'Save Cheques',
-                    click: async () => {
-                        mainWindow.webContents.send('save-cheques');
+                    label: 'Ingreso de Cheques',
+                    click: () => {
+                        createIngresoWindow();
                     }
                 },
                 { type: 'separator' },
@@ -56,6 +38,20 @@ function createMainWindow() {
 
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+}
+
+function createIngresoWindow() {
+    ingresoWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+        }
+    });
+    
+    ingresoWindow.loadFile('IngresoCheque.html');
 }
 
 app.whenReady().then(createMainWindow);
@@ -70,6 +66,32 @@ app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
         createMainWindow();
     }
+});
+
+ipcMain.handle('get-empresas', async () => {
+    // Aquí deberías obtener las empresas de tu base de datos
+    return [
+        { id: 'empresa1', nombre: 'Empresa 1' },
+        { id: 'empresa2', nombre: 'Empresa 2' }
+    ];
+});
+
+ipcMain.handle('load-cheques', async (event) => {
+    const result = await dialog.showOpenDialog(ingresoWindow, {
+        properties: ['openFile'],
+        filters: [
+            { name: 'Excel Files', extensions: ['xlsx', 'xls'] }
+        ]
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+        const filePath = result.filePaths[0];
+        const workbook = XLSX.readFile(filePath);
+        const sheetName = workbook.SheetNames[0];
+        const cheques = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+        return cheques;
+    }
+    return null;
 });
 
 ipcMain.handle('update-cheques', async (event, cheques, empresa) => {

@@ -2,7 +2,7 @@ const sql = require('mssql');
 
 const dbConfigs = {
     empresa1: {
-        user: 'userEmpresa',
+        user: 'userEmpresa1',
         password: 'cheque',
         server: 'localhost',
         database: 'ChequesEmpresa1',
@@ -14,7 +14,7 @@ const dbConfigs = {
         port: 1433,
     },
     empresa2: {
-        user: 'userEmpresa',
+        user: 'userEmpresa2',
         password: 'cheque',
         server: 'localhost',
         database: 'ChequesEmpresa2',
