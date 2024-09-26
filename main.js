@@ -1,11 +1,10 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const XLSX = require('xlsx');
 const { connectToDatabase } = require('./dbConfig');
 
 let mainWindow;
-let ingresoWindow;
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
@@ -27,7 +26,7 @@ function createMainWindow() {
                 {
                     label: 'Ingreso de Cheques',
                     click: () => {
-                        createIngresoWindow();
+                        mainWindow.webContents.send('navigate', 'IngresoCheque.html');
                     }
                 },
                 { type: 'separator' },
@@ -38,20 +37,6 @@ function createMainWindow() {
 
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
-}
-
-function createIngresoWindow() {
-    ingresoWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-        webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true,
-            nodeIntegration: false,
-        }
-    });
-    
-    ingresoWindow.loadFile('IngresoCheque.html');
 }
 
 app.whenReady().then(createMainWindow);
@@ -67,6 +52,11 @@ app.on('activate', () => {
         createMainWindow();
     }
 });
+
+ipcMain.on('navigate', (event, url) => {
+    mainWindow.loadFile(url);
+});
+
 
 ipcMain.handle('get-empresas', async () => {
     // Aquí deberías obtener las empresas de tu base de datos
@@ -100,11 +90,10 @@ ipcMain.handle('update-cheques', async (event, cheques, empresa) => {
 
         for (const cheque of cheques) {
             const [nroCheque, nuevoValor] = cheque;
-            
+            console.log(empresa.id)
             await sql.query`
-                UPDATE Cheque
-                SET nroCheque = ${nuevoValor}
-                WHERE id = ${nroCheque}
+            update ${empresa.id}.dbo.ChequesP set chp_NroCheq='${nuevoValor}' where chp_ID='${nroCheque}'
+        
             `;
         }
 

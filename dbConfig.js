@@ -1,46 +1,27 @@
 const sql = require('mssql');
 
-const dbConfigs = {
-    empresa1: {
-        user: 'userEmpresa1',
-        password: 'cheque',
-        server: 'localhost',
-        database: 'ChequesEmpresa1',
-        options: {
-            encrypt: false,
-            trustServerCertificate: true,
-            enableArithAbort: true,
-        },
-        port: 1433,
+const dbConfig = {
+    user: 'sa',
+    password: '12345678',
+    server: 'localhost',
+    options: {
+        encrypt: false,
+        trustServerCertificate: true,
+        enableArithAbort: true,
     },
-    empresa2: {
-        user: 'userEmpresa2',
-        password: 'cheque',
-        server: 'localhost',
-        database: 'ChequesEmpresa2',
-        options: {
-            encrypt: false,
-            trustServerCertificate: true,
-            enableArithAbort: true,
-        },
-        port: 1433,
-    }
+    port: 1433,
 };
 
-async function connectToDatabase(empresa) {
-    if (!dbConfigs[empresa]) {
-        throw new Error('Empresa no válida');
-    }
-
+async function connectToDatabase() {
     try {
-        await sql.connect(dbConfigs[empresa]);
-        console.log(`Conectado a la base de datos de ${empresa} correctamente`);
+        await sql.connect(dbConfig);
+        console.log('Conectado a la base de datos correctamente');
         return sql;
     } catch (err) {
         if (err.code === 'ELOGIN') {
             console.error('Error de login: Verifica tu usuario y contraseña.');
         } else {
-            console.error(`Error al conectar a la base de datos de ${empresa}:`, err);
+            console.error('Error al conectar a la base de datos:', err);
         }
         throw err;
     }
