@@ -1,8 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     const empresasSelect = document.getElementById('empresas');
     const empresas = [
-        { id: 'empresa1', nombre: 'Empresa 1' },
-        { id: 'empresa2', nombre: 'Empresa 2' }
+        { id: 'SBDATIER', nombre: 'Tierras del sur' },
+        { id: 'SBDAPATA', nombre: 'Patagonia' },
+        { id: 'SBDASURD', nombre: 'Barlog' },
+        { id: 'SBDABARS', nombre: 'BARSAT' },
+        { id: 'SBDANORE', nombre: 'Noria Express' },
+        { id: 'SBDABALO', nombre: 'Barracas Logistica' },
+        { id: 'SBDATENL', nombre: 'TENLOG ' }
     ];
     
     empresas.forEach(empresa => {
@@ -15,12 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let chequesData = null;
 
+// Cuando se carga el archivo de cheques
 window.api.onChequesLoaded((cheques) => {
     chequesData = cheques;
     document.getElementById('fileStatus').textContent = 'Archivo de cheques cargado';
 });
 
-window.api.onSaveCheques(async () => {
+document.getElementById('saveButton').addEventListener('click', async () => {
     if (!chequesData) {
         alert('No se ha cargado ningún archivo de cheques.');
         return;
@@ -33,6 +39,7 @@ window.api.onSaveCheques(async () => {
     }
 
     try {
+        // Enviar datos al backend
         const result = await window.api.updateCheques(chequesData, empresa);
         if (result.success) {
             alert('Cheques actualizados exitosamente');

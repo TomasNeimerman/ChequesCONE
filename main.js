@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const XLSX = require('xlsx');
@@ -61,13 +61,18 @@ ipcMain.on('navigate', (event, url) => {
 ipcMain.handle('get-empresas', async () => {
     // Aquí deberías obtener las empresas de tu base de datos
     return [
-        { id: 'empresa1', nombre: 'Empresa 1' },
-        { id: 'empresa2', nombre: 'Empresa 2' }
+        { id: 'SBDATIER', nombre: 'Tierras del sur' },
+        { id: 'SBDAPATA', nombre: 'Patagonia' },
+        { id: 'SBDASURD', nombre: 'Barlog' },
+        { id: 'SBDABARS', nombre: 'BARSAT'},
+        { id: 'SBDANORE', nombre: 'Noria Express'},
+        { id: 'SBDABALO', nombre: 'Barracas Logistica'},
+        { id: 'SBDATENL', nombre: 'TENLOG ' }
     ];
 });
 
 ipcMain.handle('load-cheques', async (event) => {
-    const result = await dialog.showOpenDialog(ingresoWindow, {
+    const result = await dialog.showOpenDialog(mainWindow, { // Cambié ingresoWindow a mainWindow
         properties: ['openFile'],
         filters: [
             { name: 'Excel Files', extensions: ['xlsx', 'xls'] }
@@ -84,16 +89,19 @@ ipcMain.handle('load-cheques', async (event) => {
     return null;
 });
 
-ipcMain.handle('update-cheques', async (event, cheques, empresa) => {
+ipcMain.handle('update-cheques', async (event, cheques, empresaId) => {
     try {
-        const sql = await connectToDatabase(empresa);
+        const sql = await connectToDatabase(empresaId);
 
         for (const cheque of cheques) {
             const [nroCheque, nuevoValor] = cheque;
-            console.log(empresa.id)
+            console.log(empresaId);
+            
+            // Utilizando consulta parametrizada sin sql.raw
             await sql.query`
-            update ${empresa.id}.dbo.ChequesP set chp_NroCheq='${nuevoValor}' where chp_ID='${nroCheque}'
-        
+                UPDATE ${empresaId}.dbo.ChequesP
+                SET chp_NroCheq = @nuevoValor
+                WHERE chp_ID = @nroCheque
             `;
         }
 
