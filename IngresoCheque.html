@@ -35,6 +35,7 @@
             border-radius: 5px;
         }
         button {
+            margin-bottom: 5px;
             background-color: #e82c02;
             color: white;
             border: none;
@@ -67,8 +68,8 @@
         <select id="empresas">
             <option value="">Seleccione una empresa</option>
         </select>
-        <input type="file" id="fileInput" accept=".xlsx, .xls">
-        <button id="saveButton">Actualizar Cheques</button>
+        <button id="loadButton" accept=".xlsx, .xls">Cargar Archivo</button>
+        <button id="saveButton" disabled>Actualizar Cheques</button>
         <p id="fileStatus">No se ha cargado ningún archivo de cheques</p>
     </div>
     <script src="ingresoCheque.js"></script>

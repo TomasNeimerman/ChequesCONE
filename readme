@@ -1,17 +1,7 @@
-base de datos:
-tablas:
-Usuario: (documento/nomber usuario, password)
-Base de datos a utilizar (multiempresa)
-Cheques (id,numerocheque)
-parametros de base de datos:
-Conexion:
-conectar host
-devolver usuario
-devolver conexion de internet
-funciones aplicacion:
-importar datos con un excel insertado
-actualizar base de datos
-aplicacion:
+1. Archivo de propiedades con la conexion a la base e datos (user, password, server, port)
+2. validacion de empresa con archivo de excel, que haga un log q verifique si coinciden los datos del excel con los datos de la bd
+3. control de cantidad de registros actualizados
+4. hacer un resumen de la cantidad de registros que hay en el excel y cuantos fueron updateados, que te lo diga por pantalla
 
 comandos para ejecutarlo en ort:
 npm config set strict-ssl false

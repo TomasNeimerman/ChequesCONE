@@ -1,28 +1,29 @@
 const sql = require('mssql');
-
-const dbConfig = {
+let db;
+const config = {
     user: 'sa',
     password: '12345678',
-    server: 'localhost',
+    server: 'localhost', // Actualizado según el error
+    database: db,
     options: {
-        encrypt: false,
-        trustServerCertificate: true,
-        enableArithAbort: true,
-    },
-    port: 1433,
+        encrypt: true,
+        trustServerCertificate: true
+    }
 };
 
-async function connectToDatabase() {
+async function connectToDatabase(empresaId) {
     try {
-        await sql.connect(dbConfig);
-        console.log('Conectado a la base de datos correctamente');
-        return sql;
+        
+        db = empresaId;
+
+        console.log(`Intentando conectar a la base de datos: ${empresaId}`);
+        console.log('Configuración de conexión:', JSON.stringify(config, null, 2));
+
+        const pool = await new sql.ConnectionPool(config).connect();
+        console.log(`Conectado exitosamente a la base de datos ${empresaId}`);
+        return pool;
     } catch (err) {
-        if (err.code === 'ELOGIN') {
-            console.error('Error de login: Verifica tu usuario y contraseña.');
-        } else {
-            console.error('Error al conectar a la base de datos:', err);
-        }
+        console.error('Error al conectar a la base de datos:', err);
         throw err;
     }
 }
