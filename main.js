@@ -121,7 +121,7 @@ ipcMain.handle('update-cheques', async (event, cheques, empresaId) => {
                     .input('nuevoValor', sql.Int, nroDefinitivo)  // Manejo de int
                     .input('nroCheque', sql.Int, idCheque)        // Manejo de int
                     .query(`
-                        UPDATE dbo.ChequesP
+                        UPDATE ChequesP
                         SET chp_NroCheq = @nuevoValor
                         WHERE chp_ID = @nroCheque
                     `);
