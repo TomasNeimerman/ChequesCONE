@@ -3,7 +3,3 @@
 3. control de cantidad de registros actualizados
 4. hacer un resumen de la cantidad de registros que hay en el excel y cuantos fueron updateados, que te lo diga por pantalla
 
-comandos para ejecutarlo en ort:
-npm config set strict-ssl false
-set NODE_TLS_REJECT_UNAUTHORIZED=0
-npm install
