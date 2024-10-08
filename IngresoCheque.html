@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ingreso de Cheques</title>
+    <title>Consultora de Negocios Empresarios</title>
     <style>
         body {
             font-family: 'Public Sans', sans-serif;
@@ -59,17 +59,20 @@
             left: 0;
             margin: 10px; 
         }
+        p {
+            font-weight: 10px;
+        }
     </style>
 </head>
 <body>
-    <img src="logo_cone.png" alt="Logo de CONE">
+    <img src="logo_cone.png" alt="Consultora de Negocios Empresarios">
     <div class="container">
-        <h1>Ingreso de Cheques</h1>
+        <h1>Actualizador de Cheques Propios</h1>
         <select id="empresas">
             <option value="">Seleccione una empresa</option>
         </select>
-        <button id="loadButton" accept=".xlsx, .xls">Cargar Archivo</button>
-        <button id="saveButton" disabled>Actualizar Cheques</button>
+        <button id="loadButton" accept=".xlsx, .xls">Seleccionar Planilla Excel</button>
+        <button id="saveButton" disabled>Importar Archivo</button>
         <p id="fileStatus">No se ha cargado ningún archivo de cheques</p>
     </div>
     <script src="ingresoCheque.js"></script>

@@ -4,6 +4,7 @@ const fs = require('fs');
 const XLSX = require('xlsx');
 const { connectToDatabase } = require('./dbConfig');
 const sql = require('mssql');
+const logger = require('./logger');
 
 let mainWindow;
 
@@ -22,16 +23,16 @@ function createMainWindow() {
 
     const template = [
         {
-            label: 'File',
+            label: 'Menu',
             submenu: [
                 {
-                    label: 'Ingreso de Cheques',
+                    label: 'Actualizador de Cheques Propios',
                     click: () => {
                         mainWindow.webContents.send('navigate', 'IngresoCheque.html');
                     }
                 },
-                { type: 'separator' },
-                { role: 'quit' }
+                { type: 'separator' },                          
+                { role: 'quit',label:'Salir' }
             ]
         }
     ];
@@ -62,12 +63,12 @@ ipcMain.on('navigate', (event, url) => {
 ipcMain.handle('get-empresas', async () => {
     // Aquí deberías obtener las empresas de tu base de datos
     return [
-        { id: 'SBDATIER', nombre: 'Tierras del sur' },
-        { id: 'SBDAPATA', nombre: 'Patagonia' },
-        { id: 'SBDASURD', nombre: 'Barlog' },
-        { id: 'SBDABARS', nombre: 'BARSAT'},
-        { id: 'SBDANORE', nombre: 'Noria Express'},
-        { id: 'SBDABALO', nombre: 'Barracas Logistica'},
+        { id: 'SBDATIER', nombre: 'TIERRAS DEL SUR' },
+        { id: 'SBDAPATA', nombre: 'PATAGONIA' },
+        { id: 'SBDASURD', nombre: 'BARLOG' },
+        { id: 'SBDABARS', nombre: 'BARSAT' },
+        { id: 'SBDANORE', nombre: 'NORIA EXPRESS' },
+        { id: 'SBDABALO', nombre: 'BARRACAS LOGISTICA' },
         { id: 'SBDATENL', nombre: 'TENLOG ' }
     ];
 });
@@ -90,6 +91,10 @@ ipcMain.handle('load-cheques', async (event) => {
         const sheetName = workbook.SheetNames[0];
         const cheques = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
 
+        if (cheques[0][2] != "ID Cheque" || cheques[0][9] != "Nro Definitivo"){
+            logger.error("El encabezado del archivo es incorrecto, verificar columna 2 o 9");
+            throw Error("Encabezado incorrecto");
+        }
         // Eliminar la primera fila si contiene encabezados
         if (cheques.length > 0 && typeof cheques[0][0] === 'string') {
             cheques.shift();
@@ -97,13 +102,14 @@ ipcMain.handle('load-cheques', async (event) => {
 
         // Convertir las columnas a enteros
         const mappedCheques = cheques.map(row => ({
+            codEmpresa:(row[0]),
             idCheque: parseInt(row[2], 10),       // Columna ID Cheque convertida a int
             nroDefinitivo: parseInt(row[9], 10)   // Columna Nro Definitivo convertida a int
         }));
 
         return mappedCheques;
     } catch (error) {
-        console.error('Error al cargar el archivo de cheques:', error);
+        logger.error('Error al cargar el archivo de cheques:', error);
         throw error;
     }
 });
@@ -111,11 +117,15 @@ ipcMain.handle('load-cheques', async (event) => {
 ipcMain.handle('update-cheques', async (event, cheques, empresaId) => {
     let connection;
     try {
-        console.log(`Iniciando actualización de cheques para la empresa: ${empresaId}`);
+        logger.info(`Iniciando actualización de cheques para la empresa: ${empresaId}`);
         connection = await connectToDatabase(empresaId);
 
-        for (const { idCheque, nroDefinitivo } of cheques) {
-            console.log(`Actualizando cheque ID: ${idCheque}, Nro Definitivo: ${nroDefinitivo}`);
+        for (const {codEmpresa, idCheque, nroDefinitivo } of cheques) {
+            if (codEmpresa != empresaId){
+                logger.error(`El codigo de empresa del excel: ${codEmpresa}, no se corresponde con la seleccionada: ${empresaId}`);
+                return
+            }
+            logger.info(`Actualizando cheque ID: ${idCheque}, Nro Definitivo: ${nroDefinitivo}`);
             try {
                 const result = await connection.request()
                     .input('nuevoValor', sql.Int, nroDefinitivo)  // Manejo de int
@@ -128,11 +138,10 @@ ipcMain.handle('update-cheques', async (event, cheques, empresaId) => {
                 
                 // Verificar si la consulta no afectó ninguna fila
                 if (result.rowsAffected[0] === 0) {
-                    const notFoundMsg = `Cheque con ID ${idCheque} no encontrado o sin cambios en la BD.`;
-                    console.log(notFoundMsg);
-                    throw new Error(notFoundMsg);
+                    const notFoundMsg = `Cheque con ID ${idCheque} no encontrado.`;
+                    logger.info(notFoundMsg);
                 } else {
-                    console.log(`Cheque ${idCheque} actualizado correctamente.`);
+                    logger.info(`Cheque ${idCheque} actualizado correctamente.`);
                 }
             } catch (queryError) {
                 const queryErrorMsg = `Error en la consulta SQL al actualizar cheque ID ${idCheque}: ${queryError.message}`;

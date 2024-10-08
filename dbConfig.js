@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const sql = require('mssql');
+const logger = require('./logger');
 let db;
 /**
  * Function to load the database configuration from a properties file.
@@ -45,14 +46,14 @@ async function connectToDatabase(empresaId) {
     try {
         db = empresaId;
 
-        console.log(`Intentando conectar a la base de datos: ${empresaId}`);
-        console.log('Configuración de conexión:', JSON.stringify(dbConfig, null, 2));
+        logger.info(`Intentando conectar a la base de datos: ${empresaId}`);
+        logger.info('Configuración de conexión:', JSON.stringify(dbConfig, null, 2));
 
         const pool = await new sql.ConnectionPool(dbConfig).connect();
-        console.log(`Conectado exitosamente a la base de datos ${empresaId}`);
+        logger.info(`Conectado exitosamente a la base de datos ${empresaId}`);
         return pool;
     } catch (err) {
-        console.error('Error al conectar a la base de datos:', err);
+        logger.error('Error al conectar a la base de datos:', err);
         throw err;
     }
 }

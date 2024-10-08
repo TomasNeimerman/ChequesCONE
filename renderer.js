@@ -1,12 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     const empresasSelect = document.getElementById('empresas');
     const empresas = [
-        { id: 'SBDATIER', nombre: 'Tierras del sur' },
-        { id: 'SBDAPATA', nombre: 'Patagonia' },
-        { id: 'SBDASURD', nombre: 'Barlog' },
+        { id: 'SBDATIER', nombre: 'TIERRAS DEL SUR' },
+        { id: 'SBDAPATA', nombre: 'PATAGONIA' },
+        { id: 'SBDASURD', nombre: 'BARLOG' },
         { id: 'SBDABARS', nombre: 'BARSAT' },
-        { id: 'SBDANORE', nombre: 'Noria Express' },
-        { id: 'SBDABALO', nombre: 'Barracas Logistica' },
+        { id: 'SBDANORE', nombre: 'NORIA EXPRESS' },
+        { id: 'SBDABALO', nombre: 'BARRACAS LOGISTICA' },
         { id: 'SBDATENL', nombre: 'TENLOG ' }
     ];
     

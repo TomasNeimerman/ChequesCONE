@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isProcessing) return;
         isProcessing = true;
         saveButton.disabled = true;
-        fileStatus.textContent = 'Cargando archivo...';
+        fileStatus.textContent = 'Procesando archivo...';
 
         try {
             chequesData = await window.api.loadCheques();
