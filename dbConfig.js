@@ -8,7 +8,7 @@ let db;
  * @returns {Object} config - Database connection configuration.
  */
 function loadConfig() {
-    const configPath = path.join(__dirname, './dbConfig.properties');
+    const configPath = path.join(__dirname, '../fileConfigUpdater/dbConfig.properties');
     const data = fs.readFileSync(configPath, 'utf-8');
     
     const config = {};

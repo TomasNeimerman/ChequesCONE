@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', () => {
     const empresasSelect = document.getElementById('empresas');
     const loadButton = document.getElementById('loadButton');
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cargar empresas
     window.api.getEmpresas().then((empresas) => {
         empresas.forEach(empresa => {
+           
             const option = document.createElement('option');
             option.value = empresa.id;
             option.textContent = empresa.nombre;
@@ -29,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chequesData = await window.api.loadCheques();
             
             if (chequesData && chequesData.length > 0) {
+
                 fileStatus.textContent = `Archivo cargado. ${chequesData.length} cheques válidos encontrados.`;
                 saveButton.disabled = false;
             } else {
@@ -60,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const result = await window.api.updateCheques(chequesData, empresa);
             if (result.success) {
-                alert(`Cheques actualizados exitosamente. ${result.count} cheques procesados.`);
+                alert(`Se actualizaron ${result.procesadosOK} cheques exitosamente. ${result.chequesNoProcesados} no pudieron ser procesados.`);
             } else {
                 // Mostrar el mensaje de error en la UI
                 fileStatus.textContent = `Error: ${result.error}`;

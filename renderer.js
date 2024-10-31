@@ -1,22 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const empresasSelect = document.getElementById('empresas');
-    const empresas = [
-        { id: 'SBDATIER', nombre: 'TIERRAS DEL SUR' },
-        { id: 'SBDAPATA', nombre: 'PATAGONIA' },
-        { id: 'SBDASURD', nombre: 'BARLOG' },
-        { id: 'SBDABARS', nombre: 'BARSAT' },
-        { id: 'SBDANORE', nombre: 'NORIA EXPRESS' },
-        { id: 'SBDABALO', nombre: 'BARRACAS LOGISTICA' },
-        { id: 'SBDATENL', nombre: 'TENLOG ' }
-    ];
-    
-    empresas.forEach(empresa => {
-        const option = document.createElement('option');
-        option.value = empresa.id;
-        option.textContent = empresa.nombre;
-        empresasSelect.appendChild(option);
-    });
-});
 
 let chequesData = null;
 

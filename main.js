@@ -20,7 +20,6 @@ function createMainWindow() {
     });
     
     mainWindow.loadFile('index.html');
-
     const template = [
         {
             label: 'Menu',
@@ -61,16 +60,14 @@ ipcMain.on('navigate', (event, url) => {
 
 
 ipcMain.handle('get-empresas', async () => {
+   
+    
+    const configPath = path.join(__dirname, '../fileConfigUpdater/empresas.json');
+    const data = fs.readFileSync(configPath, 'utf-8');
+    var additional = JSON.parse(data);
     // Aquí deberías obtener las empresas de tu base de datos
-    return [
-        { id: 'SBDATIER', nombre: 'TIERRAS DEL SUR' },
-        { id: 'SBDAPATA', nombre: 'PATAGONIA' },
-        { id: 'SBDASURD', nombre: 'BARLOG' },
-        { id: 'SBDABARS', nombre: 'BARSAT' },
-        { id: 'SBDANORE', nombre: 'NORIA EXPRESS' },
-        { id: 'SBDABALO', nombre: 'BARRACAS LOGISTICA' },
-        { id: 'SBDATENL', nombre: 'TENLOG ' }
-    ];
+    return additional;
+       
 });
 
 // En tu archivo main.js o donde manejes los eventos del proceso principal
@@ -104,7 +101,7 @@ ipcMain.handle('load-cheques', async (event) => {
         const mappedCheques = cheques.map(row => ({
             codEmpresa:(row[0]),
             idCheque: parseInt(row[2], 10),       // Columna ID Cheque convertida a int
-            nroDefinitivo: parseInt(row[9], 10)   // Columna Nro Definitivo convertida a int
+            nroDefinitivo: (row[9])   // Columna Nro Definitivo convertida a int
         }));
 
         return mappedCheques;
@@ -116,53 +113,71 @@ ipcMain.handle('load-cheques', async (event) => {
 
 ipcMain.handle('update-cheques', async (event, cheques, empresaId) => {
     let connection;
+    let chequesOK = 0 ;
+    let chequesNoProcesados = 0;
+    let listaNoProcesados = [];
     try {
+
         logger.info(`Iniciando actualización de cheques para la empresa: ${empresaId}`);
         connection = await connectToDatabase(empresaId);
 
         for (const {codEmpresa, idCheque, nroDefinitivo } of cheques) {
             if (codEmpresa != empresaId){
+                listaNoProcesados.push({'idCheque':idCheque,'descripcion':'La empresa seleccionada no se corresponde con la del Excel'});
+                chequesNoProcesados ++;
                 logger.error(`El codigo de empresa del excel: ${codEmpresa}, no se corresponde con la seleccionada: ${empresaId}`);
+                return
+            }
+            if (nroDefinitivo == null || nroDefinitivo == ''){
+                listaNoProcesados.push({'idCheque':idCheque,'descripcion':'Nro Definitivo en excel esta vacio'});
+                chequesNoProcesados ++;
+                logger.error(`El numero que quiere actualizar esta vacio`);                
                 return
             }
             logger.info(`Actualizando cheque ID: ${idCheque}, Nro Definitivo: ${nroDefinitivo}`);
             try {
                 const result = await connection.request()
-                    .input('nuevoValor', sql.Int, nroDefinitivo)  // Manejo de int
+                    .input('nuevoValor', sql.NVarChar, nroDefinitivo)  // Manejo de int
                     .input('nroCheque', sql.Int, idCheque)        // Manejo de int
                     .query(`
-                        UPDATE ChequesP
+                        USE ${empresaId};
+                        UPDATE dbo.ChequesP
                         SET chp_NroCheq = @nuevoValor
                         WHERE chp_ID = @nroCheque
                     `);
                 
                 // Verificar si la consulta no afectó ninguna fila
                 if (result.rowsAffected[0] === 0) {
+                    listaNoProcesados.push({'idCheque':idCheque,'descripcion':'Cheque no pudo ser actualizado, verifique que exista en la base de datos.'});
+                    chequesNoProcesados++;
                     const notFoundMsg = `Cheque con ID ${idCheque} no encontrado.`;
                     logger.info(notFoundMsg);
                 } else {
+                    chequesOK++;
                     logger.info(`Cheque ${idCheque} actualizado correctamente.`);
                 }
             } catch (queryError) {
+                chequesNoProcesados++;
                 const queryErrorMsg = `Error en la consulta SQL al actualizar cheque ID ${idCheque}: ${queryError.message}`;
-                console.error(queryErrorMsg);
-                throw new Error(queryErrorMsg); // Relanzar el error para manejarlo fuera del bloque try
+                listaNoProcesados.push({'idCheque':idCheque,'descripcion':`${queryError.message}`});
+                logger.error(queryErrorMsg);
+                //throw new Error(queryErrorMsg); // Relanzar el error para manejarlo fuera del bloque try
             }
         }
 
-        console.log(`Actualización de cheques completada para la empresa: ${empresaId}`);
-        return { success: true, count: cheques.length };
+        logger.info(`Actualización de cheques completada para la empresa: ${empresaId}`);
+        return { success: true, procesadosOK: chequesOK , conError:chequesNoProcesados,listaNoProcesados:listaNoProcesados };
     } catch (error) {
         const errorMsg = `Error en la actualización de cheques: ${error.message}`;
-        console.error(errorMsg); // Detalle del error en consola
-        return { success: false, error: errorMsg }; // Devolver el error para el frontend
+        logger.error(errorMsg); // Detalle del error en consola
+        return { success: false, error: errorMsg,listaNoProcesados:listaNoProcesados }; // Devolver el error para el frontend
     } finally {
         if (connection) {
             try {
                 await connection.close();
-                console.log('Conexión a la base de datos cerrada');
+                logger.info('Conexión a la base de datos cerrada');
             } catch (closeError) {
-                console.error(`Error al cerrar la conexión: ${closeError.message}`);
+                logger.error(`Error al cerrar la conexión: ${closeError.message}`);
             }
         }
     }
