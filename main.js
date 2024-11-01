@@ -57,7 +57,25 @@ app.on('activate', () => {
 ipcMain.on('navigate', (event, url) => {
     mainWindow.loadFile(url);
 });
-
+ipcMain.handle('check-table-exists', async (event, empresa) => {
+    let connection
+    try {
+        connection = await connectToDatabase(empresaId);
+        const result = await connection.request()
+        .input('empresaId', sql.NVarChar, empresa.idCheque)  // Manejo de int
+                // Manejo de int
+        .query(`
+        SELECT * 
+        FROM information_schema.tables 
+        WHERE table_name = @empresaId
+        `);
+        return result
+    } finally{
+        if (connection) {
+            await connection.close();
+        }
+    }
+})
 
 ipcMain.handle('get-empresas', async () => {
    

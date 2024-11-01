@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadButton = document.getElementById('loadButton');
     const saveButton = document.getElementById('saveButton');
     const fileInput = document.getElementById('fileInput');
+    const empresaStatus = document.getElementById('empresaStatus');
     const fileStatus = document.getElementById('fileStatus');
 
     let chequesData = null;
@@ -18,6 +19,31 @@ document.addEventListener('DOMContentLoaded', () => {
             option.textContent = empresa.nombre;
             empresasSelect.appendChild(option);
         });
+    });
+
+     // Elemento para mostrar estado de la empresa
+
+    // Escuchar cambios en la selección de empresa
+    empresasSelect.addEventListener('change', async () => {
+        const selectedEmpresa = empresasSelect.value;
+        if (!selectedEmpresa) {
+            empresaStatus.textContent = "Seleccione una empresa.";
+            return;
+        }
+
+        try {
+            // Llamada a la base de datos para verificar si la tabla de la empresa existe
+            const tableExists = await window.api.checkTableExists(selectedEmpresa);
+
+            if (tableExists) {
+                empresaStatus.textContent = `La empresa ${selectedEmpresa} existe en la base de datos.`;
+            } else {
+                empresaStatus.textContent = `No existe la tabla para la empresa ${selectedEmpresa} en la base de datos.`;
+            }
+        } catch (error) {
+            console.error('Error al verificar la tabla de la empresa:', error);
+            empresaStatus.textContent = `Error al verificar la empresa: ${error.message}`;
+        }
     });
 
     // Manejar carga de archivo
