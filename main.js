@@ -57,36 +57,44 @@ app.on('activate', () => {
 ipcMain.on('navigate', (event, url) => {
     mainWindow.loadFile(url);
 });
-ipcMain.handle('check-table-exists', async (event, empresa) => {
-    let connection
-    try {
-        connection = await connectToDatabase(empresaId);
-        const result = await connection.request()
-        .input('empresaId', sql.NVarChar, empresa.idCheque)  // Manejo de int
-                // Manejo de int
-        .query(`
-        SELECT * 
-        FROM information_schema.tables 
-        WHERE table_name = @empresaId
-        `);
-        return result
-    } finally{
-        if (connection) {
-            await connection.close();
-        }
-    }
-})
 
 ipcMain.handle('get-empresas', async () => {
    
     
-    const configPath = path.join(__dirname, '../fileConfigUpdater/empresas.json');
+    const configPath = path.join(__dirname, './fileConfigUpdater/empresas.json');
     const data = fs.readFileSync(configPath, 'utf-8');
     var additional = JSON.parse(data);
     // Aquí deberías obtener las empresas de tu base de datos
     return additional;
        
 });
+
+ipcMain.handle('check-table-exists', async (event, empresaId) => {
+    let connection;
+    try {
+        // Conectar a la base de datos con el ID de la empresa
+        connection = await connectToDatabase(empresaId);
+        const result = await connection.request()
+            .input('empresaId', sql.NVarChar, empresaId)
+            .query(`
+                SELECT name 
+                FROM sys.databases 
+                WHERE name =  @empresaId
+            `);
+        
+        // Si el resultado tiene filas, la tabla existe
+        return result.recordset.length > 0;
+    } catch (error) {
+        console.error(`Error al verificar la existencia de la tabla: ${error.message}`);
+        throw new Error('Error en la verificación de la tabla de la empresa');
+    } finally {
+        if (connection) {
+            await connection.close();
+        }
+    }
+});
+
+
 
 // En tu archivo main.js o donde manejes los eventos del proceso principal
 
@@ -104,28 +112,74 @@ ipcMain.handle('load-cheques', async (event) => {
         const filePath = result.filePaths[0];
         const workbook = XLSX.readFile(filePath);
         const sheetName = workbook.SheetNames[0];
-        const cheques = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+        const cheques = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-        if (cheques[0][2] != "ID Cheque" || cheques[0][9] != "Nro Definitivo"){
-            logger.error("El encabezado del archivo es incorrecto, verificar columna 2 o 9");
-            throw Error("Encabezado incorrecto");
-        }
-        // Eliminar la primera fila si contiene encabezados
-        if (cheques.length > 0 && typeof cheques[0][0] === 'string') {
-            cheques.shift();
+        logger.info('Cargando archivo de cheques:', filePath);
+
+        // Validar estructura del archivo
+        if (cheques.length === 0) {
+            logger.error('El archivo está vacío');
+            throw new Error('El archivo está vacío');
         }
 
-        // Convertir las columnas a enteros
+        // Verificar las columnas necesarias
+        if (!cheques[0].hasOwnProperty('ID Cheque') || !cheques[0].hasOwnProperty('Nro Definitivo')) {
+            logger.error('El archivo no tiene el formato esperado');
+            throw new Error('El archivo debe contener las columnas "ID Cheque" y "Nro Definitivo"');
+        }
+
+        // Mapear los datos
         const mappedCheques = cheques.map(row => ({
-            codEmpresa:(row[0]),
-            idCheque: parseInt(row[2], 10),       // Columna ID Cheque convertida a int
-            nroDefinitivo: (row[9])   // Columna Nro Definitivo convertida a int
+            codEmpresa: row['Empresa'] || '',
+            idCheque: parseInt(row['ID Cheque'], 10),
+            nroDefinitivo: row['Nro Definitivo'].toString()
         }));
 
+        logger.info(`Se cargaron ${mappedCheques.length} cheques del archivo`);
         return mappedCheques;
+
     } catch (error) {
         logger.error('Error al cargar el archivo de cheques:', error);
         throw error;
+    }
+});
+ipcMain.handle('verify-cheques', async (event, chequeIds, empresaId) => {
+    let connection;
+    try {
+        // Conectarse a la base de datos con el ID de la empresa
+        connection = await connectToDatabase(empresaId);
+        
+        // Verificar cada ID de cheque
+        const results = [];
+        for (const idCheque of chequeIds) {
+            const result = await connection.request()
+                .input('idCheque', sql.Int, idCheque)
+                .input('empresaId', sql.VarChar(4), empresaId)
+                .query(`
+                    USE ${empresaId};
+                    SELECT chp_ID, chp_NroCheq
+                    FROM dbo.ChequesP 
+                    WHERE chp_ID = @idCheque 
+                    AND chpemp_Codigo = @empresaId
+                `);
+            
+            results.push({
+                idCheque: idCheque,
+                exists: result.recordset.length > 0,
+                numeroCheque: result.recordset[0]?.chp_NroCheq || null
+            });
+        }
+
+        logger.info(`Verificación de cheques completada. Total verificados: ${results.length}`);
+        return results;
+
+    } catch (error) {
+        logger.error(`Error al verificar cheques: ${error.message}`);
+        throw new Error(`Error al verificar cheques: ${error.message}`);
+    } finally {
+        if (connection) {
+            await connection.close();
+        }
     }
 });
 

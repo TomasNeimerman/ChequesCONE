@@ -27,16 +27,13 @@
   "build": {
     "appId": "com.bejermanErp.updater",
     "productName": "BejermanErpUpdater",
-
-    
     "win": {
-      "target": "portable"      
+      "target": "portable"
     },
     "portable": {
       "unicode": false,
       "artifactName": "my_electron_app.exe"
     },
-    
     "extraResources": [
       {
         "from": "fileConfigUpdater/",

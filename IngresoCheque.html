@@ -47,7 +47,7 @@
         button:hover {
             background-color: #d42602;
         }
-        #fileStatus {
+        #fileStatus, #empresaStatus {
             margin-top: 10px;
             font-weight: bold;
         }
@@ -68,13 +68,20 @@
     <img src="logo_cone.png" alt="Consultora de Negocios Empresarios">
     <div class="container">
         <h1>Actualizador de Cheques Propios</h1>
+        
         <select id="empresas">
             <option value="">Seleccione una empresa</option>
         </select>
+        
+        <!-- Elemento para mostrar el estado de la empresa seleccionada -->
+        <p id="empresaStatus">Seleccione una empresa para verificar su existencia en la base de datos</p>
+        
         <button id="loadButton" accept=".xlsx, .xls">Seleccionar Planilla Excel</button>
         <button id="saveButton" disabled>Importar Archivo</button>
+        
         <p id="fileStatus">No se ha cargado ningún archivo de cheques</p>
     </div>
+    
     <script src="ingresoCheque.js"></script>
 </body>
 </html>

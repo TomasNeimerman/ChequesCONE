@@ -1,19 +1,17 @@
-
 document.addEventListener('DOMContentLoaded', () => {
     const empresasSelect = document.getElementById('empresas');
     const loadButton = document.getElementById('loadButton');
     const saveButton = document.getElementById('saveButton');
-    const fileInput = document.getElementById('fileInput');
     const empresaStatus = document.getElementById('empresaStatus');
     const fileStatus = document.getElementById('fileStatus');
-
+    
+    let empresaId = null;
     let chequesData = null;
     let isProcessing = false;
 
-    // Cargar empresas
+    // Cargar empresas al inicio
     window.api.getEmpresas().then((empresas) => {
         empresas.forEach(empresa => {
-           
             const option = document.createElement('option');
             option.value = empresa.id;
             option.textContent = empresa.nombre;
@@ -21,9 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-     // Elemento para mostrar estado de la empresa
-
-    // Escuchar cambios en la selección de empresa
     empresasSelect.addEventListener('change', async () => {
         const selectedEmpresa = empresasSelect.value;
         if (!selectedEmpresa) {
@@ -32,11 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Llamada a la base de datos para verificar si la tabla de la empresa existe
+            // Verificar existencia de la tabla en el backend
             const tableExists = await window.api.checkTableExists(selectedEmpresa);
 
             if (tableExists) {
                 empresaStatus.textContent = `La empresa ${selectedEmpresa} existe en la base de datos.`;
+                empresaId = selectedEmpresa
             } else {
                 empresaStatus.textContent = `No existe la tabla para la empresa ${selectedEmpresa} en la base de datos.`;
             }
@@ -46,62 +42,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Manejar carga de archivo
+    // Manejar el click en el botón de cargar Excel
     loadButton.addEventListener('click', async () => {
-        if (isProcessing) return;
-        isProcessing = true;
-        saveButton.disabled = true;
-        fileStatus.textContent = 'Procesando archivo...';
-
+        const empresaSeleccionada = empresasSelect.value;
+        if (!empresaSeleccionada) {
+            alert('Por favor, seleccione una empresa antes de cargar el archivo');
+            return;
+        }
+        
         try {
+            // Llamar a la función loadCheques del main process
             chequesData = await window.api.loadCheques();
             
-            if (chequesData && chequesData.length > 0) {
-
-                fileStatus.textContent = `Archivo cargado. ${chequesData.length} cheques válidos encontrados.`;
-                saveButton.disabled = false;
-            } else {
-                fileStatus.textContent = 'No se encontraron datos válidos en el archivo.';
+            if (!chequesData) {
+                fileStatus.textContent = 'No se seleccionó ningún archivo o el archivo está vacío';
+                return;
             }
+
+            // Extraer los IDs de cheques
+            const chequeIds = chequesData.map(cheque => cheque.idCheque);
+            
+            // Verificar los cheques contra la base de datos
+            
+            const verificationResults = await window.api.verifyCheques(chequeIds, empresaId);
+            
+            // Mostrar resultados de la verificación
+            const chequesExistentes = verificationResults.filter(r => r.exists).length;
+            const chequesNoExistentes = verificationResults.filter(r => !r.exists).length;
+            
+            let mensaje = `Archivo cargado exitosamente.\n`;
+            mensaje += `Verificación completada:\n`;
+            mensaje += `${chequesExistentes} cheques encontrados\n`;
+            mensaje += `${chequesNoExistentes} cheques no encontrados`;
+            
+            if (chequesNoExistentes > 0) {
+                const chequesNoEncontrados = verificationResults
+                    .filter(r => !r.exists)
+                    .map(r => r.idCheque)
+                    .join(', ');
+                mensaje += `\nCheques no encontrados: ${chequesNoEncontrados}`;
+            }
+            
+            fileStatus.textContent = mensaje;
+            saveButton.disabled = chequesExistentes === 0;
+            
         } catch (error) {
-            console.error('Error al cargar o procesar cheques:', error);
-            fileStatus.textContent = `Error: ${error.message}`;
-        } finally {
-            isProcessing = false;
+            console.error('Error al cargar el archivo:', error);
+            fileStatus.textContent = `Error al cargar el archivo: ${error.message}`;
+            saveButton.disabled = true;
         }
     });
 
-    // Manejar guardado de cheques
+    // Manejar el guardado de cheques
     saveButton.addEventListener('click', async () => {
         if (isProcessing || !chequesData) return;
+        
         isProcessing = true;
         saveButton.disabled = true;
         fileStatus.textContent = 'Actualizando cheques...';
-    
-        const empresa = empresasSelect.value;
-        if (!empresa) {
-            alert('Debe seleccionar una empresa');
-            isProcessing = false;
-            saveButton.disabled = false;
-            return;
-        }
-    
+        
         try {
-            const result = await window.api.updateCheques(chequesData, empresa);
+            const result = await window.api.updateCheques(chequesData, empresasSelect.value);
             if (result.success) {
-                alert(`Se actualizaron ${result.procesadosOK} cheques exitosamente. ${result.chequesNoProcesados} no pudieron ser procesados.`);
+                fileStatus.textContent = `Se actualizaron ${result.procesadosOK} cheques exitosamente.`;
+                if (result.conError > 0) {
+                    fileStatus.textContent += `\n${result.conError} cheques no pudieron ser procesados.`;
+                }
             } else {
-                // Mostrar el mensaje de error en la UI
                 fileStatus.textContent = `Error: ${result.error}`;
-                alert(`Error al actualizar cheques: ${result.error}`);
             }
         } catch (error) {
-            console.error('Error inesperado al actualizar cheques:', error);
-            alert(`Error inesperado: ${error.message}`);
+            console.error('Error al actualizar cheques:', error);
+            fileStatus.textContent = `Error: ${error.message}`;
         } finally {
             isProcessing = false;
             saveButton.disabled = !chequesData;
         }
     });
-    
 });
