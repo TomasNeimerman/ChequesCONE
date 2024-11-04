@@ -3,9 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadButton = document.getElementById('loadButton');
     const saveButton = document.getElementById('saveButton');
     const empresaStatus = document.getElementById('empresaStatus');
+    const fileInput = document.getElementById('fileInput');
     const fileStatus = document.getElementById('fileStatus');
     
-    let empresaId = null;
+
     let chequesData = null;
     let isProcessing = false;
 
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
             empresasSelect.appendChild(option);
         });
     });
+
 
     empresasSelect.addEventListener('change', async () => {
         const selectedEmpresa = empresasSelect.value;
@@ -32,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (tableExists) {
                 empresaStatus.textContent = `La empresa ${selectedEmpresa} existe en la base de datos.`;
-                empresaId = selectedEmpresa
+                
             } else {
                 empresaStatus.textContent = `No existe la tabla para la empresa ${selectedEmpresa} en la base de datos.`;
             }
@@ -43,13 +45,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Manejar el click en el botón de cargar Excel
+
+    // Manejar carga de archivo
+
     loadButton.addEventListener('click', async () => {
         const empresaSeleccionada = empresasSelect.value;
+        console.log(empresaSeleccionada)
         if (!empresaSeleccionada) {
             alert('Por favor, seleccione una empresa antes de cargar el archivo');
             return;
         }
-        
+       
         try {
             // Llamar a la función loadCheques del main process
             chequesData = await window.api.loadCheques();
@@ -62,9 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Extraer los IDs de cheques
             const chequeIds = chequesData.map(cheque => cheque.idCheque);
             
-            // Verificar los cheques contra la base de datos
             
-            const verificationResults = await window.api.verifyCheques(chequeIds, empresaId);
+            
+            const verificationResults = await window.api.verifyCheques(chequeIds, empresaSeleccionada);
             
             // Mostrar resultados de la verificación
             const chequesExistentes = verificationResults.filter(r => r.exists).length;
@@ -104,10 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const result = await window.api.updateCheques(chequesData, empresasSelect.value);
             if (result.success) {
+
                 fileStatus.textContent = `Se actualizaron ${result.procesadosOK} cheques exitosamente.`;
                 if (result.conError > 0) {
                     fileStatus.textContent += `\n${result.conError} cheques no pudieron ser procesados.`;
                 }
+
+                alert(`Se actualizaron ${result.procesadosOK} cheques exitosamente. ${result.conError} no pudieron ser procesados.<br>`);
+                
+
             } else {
                 fileStatus.textContent = `Error: ${result.error}`;
             }

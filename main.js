@@ -130,9 +130,14 @@ ipcMain.handle('load-cheques', async (event) => {
 
         // Mapear los datos
         const mappedCheques = cheques.map(row => ({
+
             codEmpresa: row['Empresa'] || '',
             idCheque: parseInt(row['ID Cheque'], 10),
-            nroDefinitivo: row['Nro Definitivo'].toString()
+            nroDefinitivo: row['Nro Definitivo'].toString(),
+            codEmpresa:(row[0]),
+            idCheque: parseInt(row[2], 10),       // Columna ID Cheque convertida a int
+            nroDefinitivo: String(row[9])   // Columna Nro Definitivo convertida a int
+
         }));
 
         logger.info(`Se cargaron ${mappedCheques.length} cheques del archivo`);
@@ -209,7 +214,7 @@ ipcMain.handle('update-cheques', async (event, cheques, empresaId) => {
             logger.info(`Actualizando cheque ID: ${idCheque}, Nro Definitivo: ${nroDefinitivo}`);
             try {
                 const result = await connection.request()
-                    .input('nuevoValor', sql.NVarChar, nroDefinitivo)  // Manejo de int
+                    .input('nuevoValor', sql.NVarChar(50), nroDefinitivo)  // Manejo de int
                     .input('nroCheque', sql.Int, idCheque)        // Manejo de int
                     .query(`
                         USE ${empresaId};
