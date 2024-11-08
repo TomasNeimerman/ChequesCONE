@@ -128,16 +128,11 @@ ipcMain.handle('load-cheques', async (event) => {
             throw new Error('El archivo debe contener las columnas "ID Cheque" y "Nro Definitivo"');
         }
 
-        // Mapear los datos
+        // Mapear los datos sin duplicación
         const mappedCheques = cheques.map(row => ({
-
-            codEmpresa: row['Empresa'] || '',
-            idCheque: parseInt(row['ID Cheque'], 10),
-            nroDefinitivo: row['Nro Definitivo'].toString(),
-            codEmpresa:(row[0]),
-            idCheque: parseInt(row[2], 10),       // Columna ID Cheque convertida a int
-            nroDefinitivo: String(row[9])   // Columna Nro Definitivo convertida a int
-
+            codEmpresa: row[0] || '',
+            idCheque: parseInt(row[2], 10),
+            nroDefinitivo: String(row[9])
         }));
 
         logger.info(`Se cargaron ${mappedCheques.length} cheques del archivo`);
@@ -148,45 +143,38 @@ ipcMain.handle('load-cheques', async (event) => {
         throw error;
     }
 });
+
 ipcMain.handle('verify-cheques', async (event, chequeIds, empresaId) => {
     let connection;
     try {
-        // Conectarse a la base de datos con el ID de la empresa
         connection = await connectToDatabase(empresaId);
-        
-        // Verificar cada ID de cheque
+        logger.info(`conectando a ${empresaId} para verificar`)
         const results = [];
         for (const idCheque of chequeIds) {
             const result = await connection.request()
-                .input('idCheque', sql.Int, idCheque)
-                .input('empresaId', sql.VarChar(4), empresaId)
+                .input('empresaId', sql.VarChar, empresaId) // Corresponde a chpemp_Codigo
+                .input('idCheque', sql.Int, idCheque) // Corresponde a chp_ID
                 .query(`
-                    USE ${empresaId};
-                    SELECT chp_ID, chp_NroCheq
+                    SELECT * 
                     FROM dbo.ChequesP 
-                    WHERE chp_ID = @idCheque 
-                    AND chpemp_Codigo = @empresaId
+                    WHERE chpemp_Codigo = @empresaId 
+                    AND chp_ID = @idCheque
                 `);
             
-            results.push({
-                idCheque: idCheque,
-                exists: result.recordset.length > 0,
-                numeroCheque: result.recordset[0]?.chp_NroCheq || null
-            });
+            // Verifica si el cheque fue encontrado
+            results.push(result.recordset.length > 0);
         }
-
-        logger.info(`Verificación de cheques completada. Total verificados: ${results.length}`);
         return results;
-
     } catch (error) {
-        logger.error(`Error al verificar cheques: ${error.message}`);
-        throw new Error(`Error al verificar cheques: ${error.message}`);
+        console.error(`Error al verificar el cheque: ${error.message}`);
+        throw new Error('Error al verificar el cheque en la base de datos');
     } finally {
         if (connection) {
             await connection.close();
         }
     }
 });
+
 
 ipcMain.handle('update-cheques', async (event, cheques, empresaId) => {
     let connection;

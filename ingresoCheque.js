@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadButton.addEventListener('click', async () => {
         const empresaSeleccionada = empresasSelect.value;
-        console.log(empresaSeleccionada)
+       
         if (!empresaSeleccionada) {
             alert('Por favor, seleccione una empresa antes de cargar el archivo');
             return;
@@ -58,29 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
        
         try {
             // Llamar a la función loadCheques del main process
-            chequesData = await window.api.loadCheques();
-            
+            chequesData = await window.api.loadCheques(); 
             if (!chequesData) {
                 fileStatus.textContent = 'No se seleccionó ningún archivo o el archivo está vacío';
                 return;
             }
-
             // Extraer los IDs de cheques
-            const chequeIds = chequesData.map(cheque => cheque.idCheque);
-            
-            
-            
+            const chequeIds = chequesData.map(cheque => cheque.idCheque);      
             const verificationResults = await window.api.verifyCheques(chequeIds, empresaSeleccionada);
-            
-            // Mostrar resultados de la verificación
             const chequesExistentes = verificationResults.filter(r => r.exists).length;
             const chequesNoExistentes = verificationResults.filter(r => !r.exists).length;
-            
-            let mensaje = `Archivo cargado exitosamente.\n`;
-            mensaje += `Verificación completada:\n`;
-            mensaje += `${chequesExistentes} cheques encontrados\n`;
-            mensaje += `${chequesNoExistentes} cheques no encontrados`;
-            
+            let mensaje = `Archivo cargado exitosamente.\n Verificación completada:\n ${chequesExistentes} cheques encontrados //// ${chequesNoExistentes} cheques no encontrados`;
             if (chequesNoExistentes > 0) {
                 const chequesNoEncontrados = verificationResults
                     .filter(r => !r.exists)
