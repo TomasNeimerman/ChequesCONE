@@ -86,7 +86,7 @@ ipcMain.handle('check-table-exists', async (event, empresaId) => {
         return result.recordset.length > 0;
     } catch (error) {
         console.error(`Error al verificar la existencia de la tabla: ${error.message}`);
-        throw new Error('Error en la verificación de la tabla de la empresa');
+        throw new Error('No existe la empresa informada en el archivo');
     } finally {
         if (connection) {
             await connection.close();
@@ -127,13 +127,29 @@ ipcMain.handle('load-cheques', async (event) => {
             logger.error('El archivo no tiene el formato esperado');
             throw new Error('El archivo debe contener las columnas "ID Cheque" y "Nro Definitivo"');
         }
-
+        
         // Mapear los datos sin duplicación
         const mappedCheques = cheques.map(row => ({
             codEmpresa: row[0] || '',
             idCheque: parseInt(row[2], 10),
-            nroDefinitivo: String(row[9])
+            nroDefinitivo: parseInt(row[9])
         }));
+
+        // Validar que nroDefinitivo no tenga más de 8 caracteres
+        const invalidCheques = mappedCheques.filter(cheque => cheque.nroDefinitivo.toString().length > 8);
+        if (invalidCheques.length > 8) {
+            logger.error('El Número Definitivo excede la cantidad máxima permitida');
+            throw new Error('El Número Definitivo excede la cantidad máxima permitida');
+        }else if(invalidCheques.length<0){
+            logger.error('No se informa Número Definitivo para el Cheque');
+            throw new Error('No se informa Número Definitivo para el Cheque');
+        }
+
+        const invalidCodEmpresa = mappedCheques.filter(cheque => cheque.codEmpresa.toString().length > 8);
+        if (invalidCodEmpresa.length > 8) {
+            logger.error('El código de empresa excede la cantidad máxima permitida (8)');
+            throw new Error('El código de empresa excede la cantidad máxima permitida (8)');
+        }
 
         logger.info(`Se cargaron ${mappedCheques.length} cheques del archivo`);
         return mappedCheques;
@@ -167,7 +183,7 @@ ipcMain.handle('verify-cheques', async (event, chequeIds, empresaId) => {
         return results;
     } catch (error) {
         console.error(`Error al verificar el cheque: ${error.message}`);
-        throw new Error('Error al verificar el cheque en la base de datos');
+        throw new Error(`No existe el Cheque (${chequeIds}) en la empresa informada`);
     } finally {
         if (connection) {
             await connection.close();
