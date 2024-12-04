@@ -27,22 +27,23 @@ document.addEventListener('DOMContentLoaded', () => {
             empresaStatus.textContent = "Seleccione una empresa.";
             return;
         }
-
+    
         try {
-            // Verificar existencia de la tabla en el backend
             const tableExists = await window.api.checkTableExists(selectedEmpresa);
-
+            
             if (tableExists) {
-                empresaStatus.textContent = `La empresa ${selectedEmpresa} existe en la base de datos.`;
-                
+                console.log(`La tabla existe para la empresa ${selectedEmpresa}`);
+                empresaStatus.textContent = `Existe la base de datos ${selectedEmpresa}`
             } else {
-                empresaStatus.textContent = `No existe la tabla para la empresa ${selectedEmpresa} en la base de datos.`;
+                console.log(`La tabla no existe para la empresa ${selectedEmpresa}`);
+                empresaStatus.textContent = `No existe la base de datos ${selectedEmpresa}`
             }
         } catch (error) {
-            console.error('Error al verificar la tabla de la empresa:', error);
-            empresaStatus.textContent = `Error al verificar la empresa: ${error.message}`;
+            console.error('Error al verificar la tabla:', error);
         }
+        
     });
+    
 
     // Manejar el click en el botón de cargar Excel
 

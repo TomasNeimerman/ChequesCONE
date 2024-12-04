@@ -15,6 +15,7 @@ function createMainWindow() {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
+            enableRemoteModule: false,
             nodeIntegration: false,
         }
     });
@@ -70,27 +71,20 @@ ipcMain.handle('get-empresas', async () => {
 });
 
 ipcMain.handle('check-table-exists', async (event, empresaId) => {
-    let connection;
     try {
-        // Conectar a la base de datos con el ID de la empresa
-        connection = await connectToDatabase(empresaId);
-        const result = await connection.request()
-            .input('empresaId', sql.NVarChar, empresaId)
-            .query(`
-                SELECT name 
-                FROM sys.databases 
-                WHERE name =  @empresaId
-            `);
-        
-        // Si el resultado tiene filas, la tabla existe
-        return result.recordset.length > 0;
+        const pool = await connectToDatabase(empresaId);
+
+        // Aquí verifica si existe la tabla en la base de datos
+        const query = `
+            SELECT COUNT(*) AS count 
+            FROM sys.databases 
+            WHERE name = '${empresaId}'`;
+
+        const result = await pool.request().query(query);
+        return result.recordset[0].count > 0;
     } catch (error) {
-        console.error(`Error al verificar la existencia de la tabla: ${error.message}`);
-        throw new Error('No existe la empresa informada en el archivo');
-    } finally {
-        if (connection) {
-            await connection.close();
-        }
+        console.error(`Error al verificar tabla para la empresa ${empresaId}:`, error);
+        throw error;
     }
 });
 
